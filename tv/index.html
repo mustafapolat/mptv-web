@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>MPTV · TV girişi</title>
+<style>
+  :root { --bg: #141414; --panel: #1f1f1f; --text: #f2f2f2; --muted: #9a9a9a; --red: #e50914; --line: #333; --ok: #46d369; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+  main { max-width: 520px; margin: 0 auto; padding: 24px 16px 48px; }
+  .logo { color: var(--red); font-weight: 900; font-size: 30px; letter-spacing: 2px; margin: 4px 0 18px; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  p.sub { color: var(--muted); margin: 0 0 20px; }
+  .card { background: var(--panel); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
+  input[type=text], input[type=email], input[type=password], input[type=url] {
+    width: 100%; padding: 13px 14px; border-radius: 8px; border: 1px solid var(--line); background: #111; color: var(--text); font-size: 16px;
+  }
+  input:focus { outline: 2px solid #fff; border-color: transparent; }
+  button { width: 100%; padding: 14px; border: 0; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 16px; }
+  .primary { background: var(--red); color: #fff; }
+  .ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+  button:disabled { opacity: .5; }
+  .tabs { display: flex; gap: 6px; background: #111; border-radius: 10px; padding: 4px; margin-bottom: 14px; }
+  .tabs button { margin: 0; padding: 10px 6px; font-size: 14px; background: transparent; color: var(--muted); }
+  .tabs button.on { background: var(--panel); color: var(--text); }
+  .msg { margin-top: 12px; font-size: 14px; min-height: 20px; }
+  .err { color: #ff6b6b; }
+  .ok { color: var(--ok); }
+  .found { background: #111; border-radius: 8px; padding: 12px 14px; margin-top: 12px; font-size: 14px; }
+  .found b { color: var(--text); }
+  .found div { color: var(--muted); margin: 2px 0; word-break: break-all; }
+  .hint { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  .row { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 14px; }
+  .row a { color: var(--muted); }
+  .hidden { display: none !important; }
+  .file { display: block; padding: 22px 14px; border: 2px dashed var(--line); border-radius: 10px; text-align: center; color: var(--muted); cursor: pointer; }
+  .file input { display: none; }
+  .code { font: 800 34px/1 monospace; letter-spacing: 8px; text-align: center; padding: 14px; background: #111; border-radius: 8px; margin-top: 6px; }
+  #codeIn { text-transform: uppercase; letter-spacing: 6px; font-family: monospace; font-size: 22px; text-align: center; }
+  .done { text-align: center; padding: 28px 18px; }
+  .done .big { font-size: 54px; color: var(--ok); }
+  .done a { color: var(--text); }
+</style>
+</head>
+<body>
+<main>
+  <div class="logo">MPTV</div>
+  <section id="form" class="card">
+    <h1 id="title">TV'nizde giriş yapın</h1>
+    <p class="sub" id="sub">MPTV hesabınızla giriş yapın; TV'niz otomatik olarak aynı hesapla açılır.</p>
+    <div id="codeShow" class="hidden"><label>TV'de görünen kod</label><div class="code" id="codeTxt"></div></div>
+    <div id="codeAsk" class="hidden"><label for="codeIn">TV'de görünen kod</label><input id="codeIn" type="text" maxlength="10" autocapitalize="characters" autocomplete="off"></div>
+    <label for="email">E-posta</label>
+    <input id="email" type="email" autocomplete="username" inputmode="email">
+    <label for="pass">Şifre</label>
+    <input id="pass" type="password" autocomplete="current-password">
+    <div id="pass2Box" class="hidden"><label for="pass2">Şifre (tekrar)</label><input id="pass2" type="password" autocomplete="new-password"></div>
+    <button class="primary" id="goBtn">Giriş yap ve TV'yi aç</button>
+    <button class="ghost" id="modeBtn">Hesabınız yok mu? Hesap oluşturun</button>
+    <div class="msg" id="msg"></div>
+  </section>
+  <section id="done" class="card done hidden">
+    <div class="big">✓</div>
+    <h1>TV'niz giriş yaptı</h1>
+    <p class="sub">Artık TV'nizden devam edebilirsiniz.</p>
+    <p class="sub"><a href="../add/">IPTV hesabı eklemek için dokunun</a></p>
+  </section>
+</main>
+<script>
+// MPTV — QR ile TV girişi. Telefonda açılan yeni oturum TV'ye devredilir; telefonda saklanmaz.
+// Yalnızca publishable anahtar; devir tv_login_approve fonksiyonuyla (bkz. webos-tv/supabase/migrations/0002_tv_login.sql).
+const SUPABASE_URL = 'https://ykhsnrqorfddjirplojj.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_KgjokCAKedWgnsWdDVEeUA_et1uKR7_';
+const $ = (id) => document.getElementById(id);
+let code = (new URLSearchParams(location.search).get('c') || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+let register = false;
+if (code) { $('codeShow').classList.remove('hidden'); $('codeTxt').textContent = code; } else $('codeAsk').classList.remove('hidden');
+// kodu adres çubuğundan kaldır (geçmişte kalmasın)
+if (location.search) history.replaceState(null, '', location.pathname);
+
+async function auth(path, body) {
+  const r = await fetch(SUPABASE_URL + '/auth/v1/' + path, { method: 'POST', headers: { apikey: SUPABASE_KEY, 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error_code || d.msg || d.error_description || d.message || ('HTTP ' + r.status));
+  return d;
+}
+function errText(m) {
+  if (/invalid_credentials|Invalid login/i.test(m)) return 'E-posta veya şifre hatalı.';
+  if (/user_already_exists|already registered/i.test(m)) return 'Bu e-posta ile zaten bir hesap var. Giriş yapın.';
+  if (/weak_password|at least/i.test(m)) return 'Şifre en az 6 karakter olmalı.';
+  if (/email_address_invalid|invalid.*email|validate email/i.test(m)) return 'Geçerli bir e-posta adresi girin.';
+  if (/rate limit/i.test(m)) return 'Çok fazla deneme yapıldı, biraz sonra tekrar deneyin.';
+  if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edin.';
+  return m;
+}
+function drawMode() {
+  $('title').textContent = register ? 'MPTV hesabı oluşturun' : 'TV\'nizde giriş yapın';
+  $('pass2Box').classList.toggle('hidden', !register);
+  $('goBtn').textContent = register ? 'Hesap oluştur ve TV\'yi aç' : 'Giriş yap ve TV\'yi aç';
+  $('modeBtn').textContent = register ? 'Zaten hesabım var — Giriş yap' : 'Hesabınız yok mu? Hesap oluşturun';
+  $('pass').autocomplete = register ? 'new-password' : 'current-password';
+  $('msg').textContent = '';
+}
+$('modeBtn').onclick = () => { register = !register; drawMode(); };
+
+$('goBtn').onclick = async () => {
+  const m = $('msg'), btn = $('goBtn');
+  if (!code) code = $('codeIn').value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const email = $('email').value.trim(), pass = $('pass').value;
+  const fail = (t) => { m.className = 'msg err'; m.textContent = t; };
+  if (!/^[A-Z0-9]{6,10}$/.test(code)) { code = ''; fail('TV\'de görünen 6 haneli kodu girin.'); return; }
+  if (!email || !pass) { fail('E-posta ve şifre gerekli.'); return; }
+  if (register && pass !== $('pass2').value) { fail('Şifreler eşleşmiyor.'); return; }
+  btn.disabled = true; m.className = 'msg'; m.textContent = register ? 'Hesap oluşturuluyor…' : 'Giriş yapılıyor…';
+  try {
+    const d = register ? await auth('signup', { email, password: pass }) : await auth('token?grant_type=password', { email, password: pass });
+    if (!d.access_token) throw new Error('Hesabınız oluşturuldu. E-postanıza gelen bağlantıyla onaylayıp tekrar deneyin.');
+    m.textContent = 'TV\'ye bağlanılıyor…';
+    const s = { access_token: d.access_token, refresh_token: d.refresh_token, expires_at: d.expires_at || Math.floor(Date.now() / 1000) + (d.expires_in || 3600), expires_in: d.expires_in, user: { id: d.user.id, email: d.user.email } };
+    const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/tv_login_approve', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, authorization: 'Bearer ' + d.access_token, 'content-type': 'application/json' },
+      body: JSON.stringify({ p_code: code, p_session: s }),
+    });
+    const ok = await r.json().catch(() => false);
+    if (!r.ok || ok !== true) {
+      if ($('codeAsk').classList.contains('hidden')) { $('codeShow').classList.add('hidden'); $('codeAsk').classList.remove('hidden'); }
+      code = '';
+      throw new Error('Kod geçersiz ya da süresi dolmuş. TV\'deki güncel kodu girin.');
+    }
+    $('form').classList.add('hidden'); $('done').classList.remove('hidden');
+  } catch (e) {
+    fail(errText(e.message));
+  } finally { btn.disabled = false; }
+};
+$('pass').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !register) $('goBtn').click(); });
+drawMode();
+</script>
+</body>
+</html>
