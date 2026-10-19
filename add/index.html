@@ -61,14 +61,21 @@
   <section id="add" class="hidden">
     <div class="row"><span id="who"></span><a href="#" id="logout">Çıkış</a></div>
     <h1 style="margin-top:14px">IPTV hesabı ekle</h1>
-    <p class="sub">Xtream panelinden alınmış M3U dosyası veya adresi, Xtream hesabına çevrilir.</p>
+    <p class="sub">Xtream bilgilerinizi girin ya da Xtream panelinden alınmış M3U dosyası veya adresini kullanın.</p>
     <div class="tabs">
-      <button data-tab="file" class="on">M3U dosyası</button>
+      <button data-tab="xtream" class="on">Xtream</button>
+      <button data-tab="file">M3U dosyası</button>
       <button data-tab="url">M3U adresi</button>
-      <button data-tab="xtream">Xtream</button>
     </div>
     <div class="card">
-      <div data-pane="file">
+      <div data-pane="xtream">
+        <label for="xu">Kullanıcı adı</label><input id="xu" type="text" autocapitalize="off" autocomplete="off">
+        <label for="xp">Şifre</label><input id="xp" type="text" autocapitalize="off" autocomplete="off">
+        <label for="xd1">DNS 1 (sunucu adresi)</label><input id="xd1" type="url" placeholder="http://sunucu:8080">
+        <label for="xd2">DNS 2 (yedek, isteğe bağlı)</label><input id="xd2" type="url">
+        <button class="ghost" id="xBtn">Devam</button>
+      </div>
+      <div data-pane="file" class="hidden">
         <label class="file" id="fileLabel">M3U dosyasını seçmek için dokunun
           <input type="file" id="file" accept=".m3u,.m3u8,audio/x-mpegurl,application/x-mpegurl,application/vnd.apple.mpegurl,text/plain">
         </label>
@@ -79,13 +86,6 @@
         <input id="m3u" type="url" placeholder="http://sunucu:8080/get.php?username=…&password=…">
         <button class="ghost" id="urlBtn">Adresi incele</button>
         <div class="hint">"get.php?username=…" biçimindeki adresler doğrudan okunur. Diğer adresleri tarayıcı açamayabilir; o durumda TV'de "M3U adresi" seçeneğini kullanın.</div>
-      </div>
-      <div data-pane="xtream" class="hidden">
-        <label for="xu">Kullanıcı adı</label><input id="xu" type="text" autocapitalize="off" autocomplete="off">
-        <label for="xp">Şifre</label><input id="xp" type="text" autocapitalize="off" autocomplete="off">
-        <label for="xd1">DNS 1 (sunucu adresi)</label><input id="xd1" type="url" placeholder="http://sunucu:8080">
-        <label for="xd2">DNS 2 (yedek, isteğe bağlı)</label><input id="xd2" type="url">
-        <button class="ghost" id="xBtn">Devam</button>
       </div>
       <div class="msg" id="detectMsg"></div>
     </div>
